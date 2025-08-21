@@ -380,21 +380,41 @@
 
 
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// import Home from "./Home";
+// import MovieDetail from "./MovieDetail";
+
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         {/* Home route */}
+//         <Route path="/" element={<Home />} />
+
+//         {/* Movie details route */}
+//         <Route path="/movie/:id" element={<MovieDetail />} />
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// export default App;
+
+
+// src/App.jsx
+import { Routes, Route } from "react-router-dom";
 import Home from "./Home";
 import MovieDetail from "./MovieDetail";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Home route */}
-        <Route path="/" element={<Home />} />
+    <Routes>
+      {/* Home route */}
+      <Route path="/" element={<Home />} />
 
-        {/* Movie details route */}
-        <Route path="/movie/:id" element={<MovieDetail />} />
-      </Routes>
-    </Router>
+      {/* Movie details route */}
+      <Route path="/movie/:id" element={<MovieDetail />} />
+    </Routes>
   );
 }
 
