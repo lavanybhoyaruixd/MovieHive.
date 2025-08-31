@@ -1,20 +1,29 @@
-import React from 'react'
+import { useState } from 'react';
 
-const Search = ({ searchTerm, setSearchTerm }) => {
+const Search = ({ onSearch }) => {
+  const [query, setQuery] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSearch(query);
+  };
+
   return (
-<div className="search">
-    <div>
-        <img src="search.svg" alt="search" />
-
-        <input 
-        type="text"
-        placeholder="Search through thousand of movies"
-        value={searchTerm}
-        onChange={(e)=> setSearchTerm(e.target.value)}
+    <form onSubmit={handleSubmit} className="search-form">
+      <div className="search-input-wrapper">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search for movies..."
+          className="search-input"
         />
-    </div>
-</div> 
- )
-}
+        <button type="submit" className="search-button">
+          <img src="/search.svg" alt="Search" />
+        </button>
+      </div>
+    </form>
+  );
+};
 
-export default Search
+export default Search;

@@ -1,182 +1,208 @@
-// src/Home.jsx
-import { useEffect, useState, useCallback } from 'react'
-import Search from './component/Search.jsx'
-import Spinner from './Spinner.jsx';
-import MovieCard from './component/MovieCard.jsx';
-import { useDebounce } from 'react-use';
-import { getTrendingMovies, updateSearchCount } from './Appwrite.js';
-
-const API_BASE_URL = 'https://api.themoviedb.org/3';
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-
-const API_OPTIONS = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    Authorization: `Bearer ${API_KEY}`
-  }
-};
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import MovieCard from './component/MovieCard';
+import Search from './component/Search';
+import ShinyText from './component/ShinyText';
+import Loading from './component/Loading';
 
 const Home = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [movieList, setMovieList] = useState([]);
-  const [TrendingMovies, setTrendingMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [movies, setMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [trendingLoading, setTrendingLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ✅ NEW: toggle state
-  const [showAdult, setShowAdult] = useState(false);
+  useEffect(() => {
+    fetchMovies();
+    fetchTrendingMovies();
+  }, []);
 
-  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
-
-  const fetchMovies = useCallback(async (query = '', pageNum = 1, append = false) => {
-    setIsLoading(true);
-    setErrorMessage('');
-
+  const fetchMovies = async () => {
     try {
-      let randomPage = pageNum;
-      if (!query && pageNum === 1) {
-        randomPage = Math.floor(Math.random() * 50) + 1;
+      setLoading(true);
+      
+      // Debug: Check if API key is loaded
+      console.log('API Key loaded:', import.meta.env.VITE_TMDB_API_KEY ? 'Yes' : 'No');
+      console.log('API Key length:', import.meta.env.VITE_TMDB_API_KEY?.length);
+      
+      const apiUrl = `https://api.themoviedb.org/3/movie/popular?language=en-US&page=1`;
+      console.log('API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to fetch movies: ${response.status} ${response.statusText}`);
       }
-
-      const endpoint = query
-        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&page=${pageNum}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${randomPage}`;
-
-      const response = await fetch(endpoint, API_OPTIONS);
-
-      if (!response.ok) throw new Error('Failed to fetch movies');
-
+      
       const data = await response.json();
-
-      if (!data || !data.results) {
-        setErrorMessage('Failed to fetch movies');
-        setMovieList([]);
-        return;
-      }
-
-      // use functional update to avoid capturing stale movieList
-      setMovieList(prev => (append ? [...prev, ...data.results] : data.results));
-      setTotalPages(data.total_pages);
-
-      if (query && data.results.length > 0 && pageNum === 1) {
-        await updateSearchCount(query, data.results[0]);
-      }
-    } catch (error) {
-      console.error(`Error fetching movies: ${error}`);
-      setErrorMessage('Error fetching movies. Please try again later.');
+      console.log('API Response data:', data);
+      setMovies(data.results);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const loadtrendingMovies = useCallback(async () => {
+  const fetchTrendingMovies = async () => {
     try {
-      const movies = await getTrendingMovies();
-      setTrendingMovies(movies);
-    } catch (error) {
-      console.error(`Error fetching trending movies: ${error}`);
-    }
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-    fetchMovies(debouncedSearchTerm, 1, false);
-  }, [debouncedSearchTerm, fetchMovies]);
-
-  useEffect(() => {
-    loadtrendingMovies();
-    fetchMovies('', 1, false);
-  }, [loadtrendingMovies, fetchMovies]);
-
-  const handleLoadMore = () => {
-    if (page < totalPages) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchMovies(debouncedSearchTerm, nextPage, true);
+      setTrendingLoading(true);
+      
+      const apiUrl = `https://api.themoviedb.org/3/trending/movie/week?language=en-US&page=1`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch trending movies: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setTrendingMovies(data.results.slice(0, 10)); // Get top 10 trending movies
+    } catch (err) {
+      console.error('Trending fetch error:', err);
+    } finally {
+      setTrendingLoading(false);
     }
   };
 
-  // ✅ Filter applied here
-  const filteredMovies = showAdult
-    ? movieList
-    : movieList.filter(movie => !movie.adult);
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      fetchMovies();
+      return;
+    }
 
-  // Toggle handler
-  const handleToggleAdult = () => {
-    setShowAdult((prev) => !prev);
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?language=en-US&query=${encodeURIComponent(query)}&page=1`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to search movies');
+      }
+      
+      const data = await response.json();
+      setMovies(data.results);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="home">
+        <Loading type="spinner" size="large" text="Loading movies..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error">
+        <p>Error: {error}</p>
+        <button onClick={fetchMovies}>Try Again</button>
+      </div>
+    );
+  }
 
   return (
-    <main>
-      <div className="pattern" />
-      <div className="wrapper">
-        <header>
-          <img src="./hero.png" alt="hero Banner" />
+    <div className="home">
+      <div className="hero">
+        <div className="hero-content">
           <h1>
-            Find <span className="text-gradient">Movies</span> You'll Enjoy Without the Hassle
+            <ShinyText text="Discover Amazing Movies" speed={4} />
           </h1>
-          <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-        </header>
-
-        {TrendingMovies.length > 0 && (
-          <section className="trending">
-            <h2>Trending Movies</h2>
-            <ul>
-              {TrendingMovies.map((movie, index) => (
-                <li key={movie.$id}>
-                  <p>{index + 1}</p>
-                  <img src={movie.poster_url} alt={movie.title} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section className="all-movie">
-          <h2>All Movies</h2>
-
-         {/* ✅ Adult Filter Toggle */}
-<button
-  onClick={handleToggleAdult}
-  role="switch"
-  aria-checked={showAdult}
-  className="mb-2 px-2 py-0.5 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700"
->
-  {showAdult ? "Hide Adult" : "Show Adult"}
-</button>
-
-
-          {isLoading ? (
-            <Spinner />
-          ) : errorMessage ? (
-            <p className="text-red-500">{errorMessage}</p>
-          ) : (
-            <>
-              <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 list-none p-0">
-                {filteredMovies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} />
-                ))}
-              </ul>
-
-              {page < totalPages && (
-                <div className="flex justify-center mt-6">
-                  <button
-                    onClick={handleLoadMore}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Load More
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
+          <p>Find your next favorite film from our extensive collection</p>
+          <Search onSearch={handleSearch} />
+        </div>
       </div>
-    </main>
+
+      {/* Trending Movies Section */}
+      {trendingMovies.length > 0 && (
+        <div className="trending-section">
+          <div className="container">
+            <h2 className="trending-title">
+              <ShinyText text="Trending Movies" speed={6} />
+            </h2>
+            
+            {trendingLoading ? (
+              <div className="trending-loading">
+                <Loading type="spinner" size="medium" text="Loading trending movies..." />
+              </div>
+            ) : (
+              <div className="trending-grid">
+                {trendingMovies.map((movie, index) => (
+                  <Link 
+                    to={`/movie/${movie.id}`} 
+                    key={movie.id} 
+                    className="trending-item"
+                  >
+                    <div className="trending-rank">{index + 1}</div>
+                    <img
+                      src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                      alt={movie.title}
+                      className="trending-poster"
+                    />
+                    <div className="trending-info">
+                      <h3 className="trending-title-text">{movie.title}</h3>
+                      <div className="trending-rating">
+                        <img src="/star.svg" alt="Rating" className="trending-star" />
+                        <span>{movie.vote_average.toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="container">
+        <h2 className="section-title">
+          <ShinyText text="Popular Movies" speed={5} />
+        </h2>
+        
+        <div className="movies-grid">
+          {movies.map((movie) => (
+            <MovieCard key={movie.id} movie={movie} />
+          ))}
+        </div>
+        
+        {movies.length === 0 && (
+          <div className="no-movies">
+            <p>No movies found. Try a different search term.</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
