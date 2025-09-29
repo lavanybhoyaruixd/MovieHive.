@@ -14,6 +14,8 @@ import HelpCenter from './pages/HelpCenter';
 import FAQ from './pages/FAQ';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AboutUs from './pages/AboutUs';
 import Contact from './pages/Contact';
 import './App.css';
@@ -45,6 +47,8 @@ function App() {
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
             </Routes>
           </main>
             <Footer />

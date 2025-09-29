@@ -17,7 +17,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   
-  const { signup } = useAuth();
+  const { signup, login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -65,27 +65,45 @@ const Signup = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
+
+    if (!name) {
       setError('Name is required');
       return false;
     }
-    if (!formData.email.trim()) {
+    if (!email) {
       setError('Email is required');
       return false;
     }
-    if (!formData.password.trim()) {
+    if (!password) {
       setError('Password is required');
       return false;
     }
-    if (formData.password.length < 8) {
+    if (password.length < 8) {
       setError('Password must be at least 8 characters long');
       return false;
     }
-    if (passwordStrength < 3) {
+
+    // Recompute strength at submit-time to avoid stale state issues
+    const computeStrength = (pwd) => {
+      let s = 0;
+      if (pwd.length >= 8) s += 1;
+      if (/[a-z]/.test(pwd)) s += 1;
+      if (/[A-Z]/.test(pwd)) s += 1;
+      if (/[0-9]/.test(pwd)) s += 1;
+      if (/[^A-Za-z0-9]/.test(pwd)) s += 1;
+      return s;
+    };
+    const strengthNow = computeStrength(password);
+
+    if (strengthNow < 3) {
       setError('Password is too weak. Please choose a stronger password');
       return false;
     }
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Passwords do not match');
       return false;
     }
@@ -101,20 +119,44 @@ const Signup = () => {
     setError('');
 
     try {
-      const result = await signup(formData.email, formData.password);
-      // Show success message and redirect to login
-      alert(result.message);
-      navigate('/login');
+      const result = await signup(formData.email, formData.password, formData.name);
+      if (result.success) {
+        // Redirect to home immediately after successful signup
+        setError('');
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       console.error('Signup error:', err);
-      
-      // Handle specific Appwrite errors
-      if (err.message.includes('User already exists')) {
-        setError('An account with this email already exists. Please try logging in.');
-      } else if (err.message.includes('Invalid email')) {
+      const msg = (err?.message || '').toLowerCase();
+
+      // If backend says account exists or created but sign-in failed, try to sign in automatically
+      if (
+        msg.includes('already exists') ||
+        msg.includes('account created but') ||
+        msg.includes('account created on server')
+      ) {
+        try {
+          const loginResult = await login(formData.email, formData.password);
+          if (loginResult?.success) {
+            setError('');
+            navigate('/', { replace: true });
+            return;
+          }
+        } catch (loginErr) {
+          // Fall through to show a friendly message below
+          console.warn('Auto-login after signup failed:', loginErr?.message || loginErr);
+        }
+      }
+
+      // Handle specific errors (case-insensitive)
+      if (msg.includes('invalid email')) {
         setError('Please enter a valid email address.');
-      } else if (err.message.includes('Password')) {
+      } else if (msg.includes('password must be at least') || msg.includes('password does not meet')) {
         setError('Password does not meet requirements. Please choose a stronger password.');
+      } else if (msg.includes('already exists')) {
+        setError('An account with this email already exists. Please try logging in.');
+      } else if (msg.includes('verify')) {
+        setError('Account created. Please verify your email, then log in.');
       } else {
         setError(err.message || 'Signup failed. Please try again.');
       }

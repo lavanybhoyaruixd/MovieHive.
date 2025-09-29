@@ -1,3 +1,16 @@
+.env*
+.vscode/
+*.log
+node_modules/
+dist/
+**/node_modules/
+**/dist/
+.vite/
+.DS_Store
+Thumbs.db
+.env.local
+vite-project/node_modules/
+vite-project/dist/
 # Logs
 logs
 *.log

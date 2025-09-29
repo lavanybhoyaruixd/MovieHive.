@@ -51,8 +51,12 @@ const Login = () => {
     setError('');
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/');
+      const result = await login(formData.email, formData.password);
+      if (result.success) {
+        // Redirect to home immediately after successful login
+        setError('');
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       console.error('Login error:', err);
       
@@ -71,13 +75,6 @@ const Login = () => {
     }
   };
 
-  const handleGuestLogin = () => {
-    // For demo purposes - you can remove this in production
-    setFormData({
-      email: 'demo@example.com',
-      password: 'demo123'
-    });
-  };
 
   return (
     <div className="auth-page">
@@ -167,18 +164,6 @@ const Login = () => {
               )}
             </button>
 
-            <div className="divider">
-              <span>or</span>
-            </div>
-
-            <button 
-              type="button" 
-              className="auth-button secondary"
-              onClick={handleGuestLogin}
-              disabled={loading}
-            >
-              Try Demo Account
-            </button>
           </form>
 
           <div className="auth-footer">
