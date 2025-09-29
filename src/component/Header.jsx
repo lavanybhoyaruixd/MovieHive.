@@ -10,8 +10,12 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      // Optionally redirect to home page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
+      // Even if logout fails, redirect to home
+      window.location.href = '/';
     }
   };
 
@@ -42,12 +46,9 @@ const Header = () => {
           <div className="auth-section">
             {user ? (
               <div className="user-menu">
-                <div className="user-info">
-                  <div className="user-avatar">
-                    {user.email.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="user-email">{user.email}</span>
-                </div>
+                <Link to="/profile" className="user-name">
+                  {user.email.split('@')[0]}
+                </Link>
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>

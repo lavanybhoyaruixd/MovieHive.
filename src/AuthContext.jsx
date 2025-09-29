@@ -55,8 +55,20 @@ export const AuthProvider = ({ children }) => {
     try {
       await account.deleteSession('current()');
       setUser(null);
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if logout fails on server, clear local user state
+      setUser(null);
+    }
+  };
+
+  const changePassword = async (oldPassword, newPassword) => {
+    try {
+      await account.updatePassword(newPassword, oldPassword);
+      return { success: true, message: 'Password updated successfully!' };
+    } catch (error) {
+      throw new Error(error.message);
     }
   };
 
@@ -65,6 +77,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    changePassword,
     loading
   };
 

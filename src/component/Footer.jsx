@@ -45,29 +45,32 @@ const Footer = () => {
             <ul className="footer-links">
               <li><Link to="/">Home</Link></li>
               <li><Link to="/profile">Profile</Link></li>
-              <li><a href="#about">About Us</a></li>
-              <li><a href="#contact">Contact</a></li>
+              <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/contact">Contact</Link></li>
             </ul>
           </div>
 
           <div className="footer-section">
             <h3>Categories</h3>
             <ul className="footer-links">
-              <li><a href="#action">Action</a></li>
-              <li><a href="#comedy">Comedy</a></li>
-              <li><a href="#drama">Drama</a></li>
-              <li><a href="#horror">Horror</a></li>
-              <li><a href="#sci-fi">Sci-Fi</a></li>
+              <li><Link to="/category/28/Action">Action</Link></li>
+              <li><Link to="/category/35/Comedy">Comedy</Link></li>
+              <li><Link to="/category/18/Drama">Drama</Link></li>
+              <li><Link to="/category/27/Horror">Horror</Link></li>
+              <li><Link to="/category/878/Science Fiction">Sci-Fi</Link></li>
+              <li><Link to="/category/16/Animation">Animation</Link></li>
+              <li><Link to="/category/10749/Romance">Romance</Link></li>
+              <li><Link to="/category/53/Thriller">Thriller</Link></li>
             </ul>
           </div>
 
           <div className="footer-section">
             <h3>Support</h3>
             <ul className="footer-links">
-              <li><a href="#help">Help Center</a></li>
-              <li><a href="#faq">FAQ</a></li>
-              <li><a href="#privacy">Privacy Policy</a></li>
-              <li><a href="#terms">Terms of Service</a></li>
+              <li><Link to="/help">Help Center</Link></li>
+              <li><Link to="/faq">FAQ</Link></li>
+              <li><Link to="/privacy">Privacy Policy</Link></li>
+              <li><Link to="/terms">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
@@ -75,7 +78,7 @@ const Footer = () => {
         <div className="footer-bottom">
           <div className="footer-bottom-content">
             <p>&copy; {currentYear} MovieHub. All rights reserved.</p>
-            <p>Powered by TMDB API</p>
+            <p className="made-with-love">Made with ❤️ and 🎬 by Lavanya Bhoyar</p>
           </div>
         </div>
       </div>

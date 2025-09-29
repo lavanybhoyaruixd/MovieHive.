@@ -88,21 +88,28 @@
 }
 
 .auth-btn {
-  padding: 8px 20px;
+  padding: 6px 16px;
   border: none;
-  border-radius: 25px;
-  font-weight: 600;
+  border-radius: 20px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   text-decoration: none;
   display: inline-block;
+  min-width: 70px;
+  text-align: center;
+  height: 32px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .login-btn {
   background: transparent;
   color: #ffffff;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .login-btn:hover {
@@ -116,8 +123,8 @@
 }
 
 .signup-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 /* User Menu */
@@ -127,29 +134,23 @@
   gap: 16px;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+.user-name {
   color: #ffffff;
-  font-size: 1rem;
-}
-
-.user-email {
-  color: #ffffff;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+}
+
+.user-name:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .logout-btn {
@@ -291,8 +292,9 @@
     display: flex;
   }
 
-  .user-email {
-    display: none;
+  .user-name {
+    font-size: 0.8rem;
+    padding: 5px 10px;
   }
 
   .auth-buttons {
@@ -300,8 +302,10 @@
   }
 
   .auth-btn {
-    padding: 6px 16px;
-    font-size: 0.8rem;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    min-width: 65px;
+    height: 30px;
   }
 }
 
@@ -320,8 +324,10 @@
   }
 
   .auth-btn {
-    padding: 4px 12px;
-    font-size: 0.75rem;
+    padding: 5px 12px;
+    font-size: 0.7rem;
+    min-width: 55px;
+    height: 28px;
   }
 
   .modal-content {

@@ -10,22 +10,32 @@ const Home = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [trendingLoading, setTrendingLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMoreMovies, setHasMoreMovies] = useState(true);
 
   useEffect(() => {
     fetchMovies();
     fetchTrendingMovies();
   }, []);
 
-  const fetchMovies = async () => {
+  const fetchMovies = async (page = 1, append = false) => {
     try {
-      setLoading(true);
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadMoreLoading(true);
+      }
       
       // Debug: Check if API key is loaded
       console.log('API Key loaded:', import.meta.env.VITE_TMDB_API_KEY ? 'Yes' : 'No');
       console.log('API Key length:', import.meta.env.VITE_TMDB_API_KEY?.length);
       
-      const apiUrl = `https://api.themoviedb.org/3/movie/popular?language=en-US&page=1`;
+      const apiUrl = `https://api.themoviedb.org/3/movie/popular?language=en-US&page=${page}`;
       console.log('API URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
@@ -47,12 +57,22 @@ const Home = () => {
       
       const data = await response.json();
       console.log('API Response data:', data);
-      setMovies(data.results);
+      
+      if (append) {
+        setMovies(prevMovies => [...prevMovies, ...data.results]);
+      } else {
+        setMovies(data.results);
+      }
+      
+      setTotalPages(data.total_pages);
+      setCurrentPage(page);
+      setHasMoreMovies(page < data.total_pages);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+      setLoadMoreLoading(false);
     }
   };
 
@@ -84,13 +104,22 @@ const Home = () => {
   };
 
   const handleSearch = async (query) => {
+    setSearchQuery(query);
+    
     if (!query.trim()) {
-      fetchMovies();
+      setSearchLoading(false);
+      // Reset pagination when clearing search
+      setCurrentPage(1);
+      setTotalPages(0);
+      setHasMoreMovies(true);
+      fetchMovies(1, false);
       return;
     }
 
     try {
-      setLoading(true);
+      setSearchLoading(true);
+      setError(null);
+      
       const response = await fetch(
         `https://api.themoviedb.org/3/search/movie?language=en-US&query=${encodeURIComponent(query)}&page=1`,
         {
@@ -108,10 +137,48 @@ const Home = () => {
       
       const data = await response.json();
       setMovies(data.results);
+      setTotalPages(data.total_pages);
+      setCurrentPage(1);
+      setHasMoreMovies(data.total_pages > 1);
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      setSearchLoading(false);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (searchQuery) {
+      // Load more search results
+      try {
+        setLoadMoreLoading(true);
+        const response = await fetch(
+          `https://api.themoviedb.org/3/search/movie?language=en-US&query=${encodeURIComponent(searchQuery)}&page=${currentPage + 1}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to load more movies');
+        }
+        
+        const data = await response.json();
+        setMovies(prevMovies => [...prevMovies, ...data.results]);
+        setCurrentPage(prevPage => prevPage + 1);
+        setHasMoreMovies(currentPage + 1 < data.total_pages);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoadMoreLoading(false);
+      }
+    } else {
+      // Load more popular movies
+      await fetchMovies(currentPage + 1, true);
     }
   };
 
@@ -140,6 +207,18 @@ const Home = () => {
             <ShinyText text="Discover Amazing Movies" speed={4} />
           </h1>
           <p>Find your next favorite film from our extensive collection</p>
+          
+          {/* Featured Movie Posters Section */}
+          <div className="featured-posters-container">
+            <div className="posters-showcase">
+              <img 
+                src="/hero.png" 
+                alt="Featured Movie Posters" 
+                className="featured-posters-image"
+              />
+            </div>
+          </div>
+          
           <Search onSearch={handleSearch} />
         </div>
       </div>
@@ -187,19 +266,55 @@ const Home = () => {
 
       <div className="container">
         <h2 className="section-title">
-          <ShinyText text="Popular Movies" speed={5} />
+          <ShinyText 
+            text={searchQuery ? `Search Results for "${searchQuery}"` : "Popular Movies"} 
+            speed={5} 
+          />
         </h2>
         
-        <div className="movies-grid">
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
-          ))}
-        </div>
-        
-        {movies.length === 0 && (
-          <div className="no-movies">
-            <p>No movies found. Try a different search term.</p>
+        {searchLoading && (
+          <div className="search-loading">
+            <Loading type="spinner" size="medium" text="Searching movies..." />
           </div>
+        )}
+        
+        {!searchLoading && (
+          <>
+            <div className="movies-grid">
+              {movies.map((movie) => (
+                <MovieCard key={movie.id} movie={movie} />
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {hasMoreMovies && movies.length > 0 && (
+              <div className="load-more-section">
+                <button 
+                  className="load-more-button"
+                  onClick={handleLoadMore}
+                  disabled={loadMoreLoading}
+                >
+                  {loadMoreLoading ? (
+                    <Loading type="spinner" size="small" text="Loading more..." />
+                  ) : (
+                    'Load More Movies'
+                  )}
+                </button>
+              </div>
+            )}
+            
+            {movies.length === 0 && searchQuery && (
+              <div className="no-movies">
+                <p>No movies found for "{searchQuery}". Try a different search term.</p>
+              </div>
+            )}
+            
+            {movies.length === 0 && !searchQuery && (
+              <div className="no-movies">
+                <p>No movies available at the moment.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

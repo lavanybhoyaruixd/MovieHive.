@@ -1,29 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useFavorites } from './contexts/FavoritesContext';
 import { useNavigate } from 'react-router-dom';
 import MovieCard from './component/MovieCard';
 import ShinyText from './component/ShinyText';
 import Loading from './component/Loading';
+import ChangePasswordModal from './component/ChangePasswordModal';
 import './Profile.css';
 
 const Profile = () => {
   const { user, logout } = useAuth();
+  const { favorites, loading: favoritesLoading, error: favoritesError } = useFavorites();
   const navigate = useNavigate();
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate('/');
       return;
     }
-    
-    // Simulate loading favorite movies
-    setTimeout(() => {
-      setFavoriteMovies([]);
-      setLoading(false);
-    }, 1000);
   }, [user, navigate]);
 
   const handleLogout = async () => {
@@ -32,6 +28,8 @@ const Profile = () => {
       navigate('/');
     } catch (error) {
       console.error('Logout failed:', error);
+      // Even if logout fails, redirect to home
+      navigate('/');
     }
   };
 
@@ -39,11 +37,11 @@ const Profile = () => {
     return null;
   }
 
-  if (loading) {
+  if (favoritesLoading && activeTab === 'favorites') {
     return (
       <div className="profile-page">
         <div className="container">
-          <Loading type="spinner" size="large" text="Loading profile..." />
+          <Loading type="spinner" size="large" text="Loading favorites..." />
         </div>
       </div>
     );
@@ -58,7 +56,7 @@ const Profile = () => {
           </div>
           <div className="profile-info">
             <h1>
-              <ShinyText text="My Profile" speed={3} />
+              <ShinyText text={`Welcome, ${user.email.split('@')[0]}`} speed={3} />
             </h1>
             <p className="user-email">{user.email}</p>
             <p className="member-since">
@@ -116,7 +114,7 @@ const Profile = () => {
           {activeTab === 'favorites' && (
             <div className="favorites-section">
               <h2>My Favorite Movies</h2>
-              {favoriteMovies.length === 0 ? (
+              {favorites.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">🎬</div>
                   <h3>No favorite movies yet</h3>
@@ -130,7 +128,7 @@ const Profile = () => {
                 </div>
               ) : (
                 <div className="movies-grid">
-                  {favoriteMovies.map((movie) => (
+                  {favorites.map((movie) => (
                     <MovieCard key={movie.id} movie={movie} />
                   ))}
                 </div>
@@ -145,7 +143,12 @@ const Profile = () => {
                 <div className="setting-item">
                   <h3>Change Password</h3>
                   <p>Update your account password</p>
-                  <button className="setting-btn">Change Password</button>
+                  <button 
+                    className="setting-btn"
+                    onClick={() => setIsChangePasswordModalOpen(true)}
+                  >
+                    Change Password
+                  </button>
                 </div>
                 <div className="setting-item">
                   <h3>Notification Preferences</h3>
@@ -175,6 +178,14 @@ const Profile = () => {
           )}
         </div>
       </div>
+      
+      {/* Change Password Modal */}
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

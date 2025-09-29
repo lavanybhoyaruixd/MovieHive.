@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext.jsx";
-import { useParams, Link } from "react-router-dom";
+import { useFavorites } from './contexts/FavoritesContext';
+import { useParams, Link, useNavigate } from "react-router-dom";
 import "./MovieDetail.css";
 import ShinyText from "./component/ShinyText";
 
 const MovieDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [trailer, setTrailer] = useState(null);
   const [cast, setCast] = useState([]);
@@ -15,6 +18,8 @@ const MovieDetail = () => {
   const [error, setError] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showTrailerModal, setShowTrailerModal] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [favoriteMessage, setFavoriteMessage] = useState('');
 
   const fetchMovieDetails = useCallback(async () => {
     try {
@@ -106,6 +111,49 @@ const MovieDetail = () => {
     return formatCurrency(amount);
   };
 
+  const handleFavoriteClick = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!movie) return;
+
+    try {
+      setIsTogglingFavorite(true);
+      setFavoriteMessage('');
+      
+      const wasAlreadyFavorite = isFavorite(movie.id);
+      
+      await toggleFavorite({
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        release_date: movie.release_date,
+        vote_average: movie.vote_average,
+        original_language: movie.original_language,
+        overview: movie.overview,
+        genre_ids: movie.genres ? movie.genres.map(g => g.id) : undefined,
+      });
+      
+      // Show success message
+      if (wasAlreadyFavorite) {
+        setFavoriteMessage('Removed from favorites!');
+      } else {
+        setFavoriteMessage('Added to favorites!');
+      }
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setFavoriteMessage(''), 3000);
+      
+    } catch (e) {
+      console.error('Failed to toggle favorite from details:', e);
+      setFavoriteMessage('Error: ' + e.message);
+      setTimeout(() => setFavoriteMessage(''), 5000);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="movie-detail">
@@ -132,9 +180,47 @@ const MovieDetail = () => {
   return (
     <div className="movie-detail">
       <div className="container">
-        <Link to="/" className="back-btn">
-          ← Back to Movies
-        </Link>
+        {/* Top Navigation Bar */}
+        <div className="top-nav">
+          <Link to="/" className="back-btn">
+            ← Back to Movies
+          </Link>
+          
+          <div className="movie-rating-section">
+            <div className="rating-display">
+              <img src="/star.svg" alt="Rating" className="star-icon" />
+              <span className="rating-text">{movie.vote_average.toFixed(1)}/10</span>
+              <span className="rating-count">({Math.floor(movie.vote_count / 1000)}K)</span>
+            </div>
+            <div className="favorite-section">
+              <button
+                className={`detail-favorite-btn ${movie && isFavorite(movie.id) ? 'favorited' : ''}`}
+                onClick={handleFavoriteClick}
+                disabled={isTogglingFavorite}
+                title={movie && isFavorite(movie.id) ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill={movie && isFavorite(movie.id) ? "#ff6b6b" : "none"}
+                  stroke={movie && isFavorite(movie.id) ? "#ff6b6b" : "currentColor"}
+                  strokeWidth="2"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <span className="detail-favorite-text">
+                  {isTogglingFavorite ? 'Saving...' : movie && isFavorite(movie.id) ? 'Favorited' : 'Add to Favorites'}
+                </span>
+              </button>
+              {favoriteMessage && (
+                <div className={`favorite-message ${favoriteMessage.includes('Error') ? 'error' : 'success'}`}>
+                  {favoriteMessage}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Main Movie Header */}
         <div className="movie-header">
@@ -150,18 +236,6 @@ const MovieDetail = () => {
               {movie.adult === false && (
                 <span>• PG-13</span>
               )}
-            </div>
-          </div>
-          
-          <div className="movie-rating-section">
-            <div className="rating-display">
-              <img src="/star.svg" alt="Rating" className="star-icon" />
-              <span className="rating-text">{movie.vote_average.toFixed(1)}/10</span>
-              <span className="rating-count">({Math.floor(movie.vote_count / 1000)}K)</span>
-            </div>
-            <div className="like-button">
-              <span className="like-icon">↑</span>
-              <span className="like-count">1</span>
             </div>
           </div>
         </div>
@@ -192,12 +266,6 @@ const MovieDetail = () => {
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="homepage-button">
-            <button className="visit-homepage-btn">
-              Visit Homepage →
-            </button>
           </div>
         </div>
 
