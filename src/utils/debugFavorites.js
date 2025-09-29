@@ -1,5 +1,5 @@
 // Debug utility for favorites functionality
-import { databases } from '../Appwrite';
+import { databases } from '../Appwrite.js';
 import { Query } from 'appwrite';
 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
