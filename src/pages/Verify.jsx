@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { account } from '../Appwrite.js';
+import { account } from '../appwrite.js';
 import Loading from '../component/Loading';
 import './Auth.css';
 

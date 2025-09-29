@@ -1,4 +1,4 @@
-import { databases } from '../Appwrite.js';
+import { databases } from '../appwrite.js';
 import { ID, Query, Permission, Role } from 'appwrite';
 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;

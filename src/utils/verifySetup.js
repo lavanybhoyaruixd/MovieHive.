@@ -1,5 +1,5 @@
 // Setup verification utility
-import { databases } from '../Appwrite.js';
+import { databases } from '../appwrite.js';
 import { Query, ID } from 'appwrite';
 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
